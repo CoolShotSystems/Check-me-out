@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Unquiet Minds</title>
+
+  <!-- Google Font -->
+  <link
+    href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <style>
+    /* Reset & Box-Sizing */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* Theme & Typography Variables */
+    :root {
+      --bg: #fdfdfd;
+      --fg: #333;
+      --font-size: 1rem;
+      --line-height: 1.6;
+    }
+    [data-theme="dark"] {
+      --bg: #222;
+      --fg: #eee;
+    }
+
+    html, body {
+      height: 100%;
+    }
+    body {
+      display: flex;
+      flex-direction: column;
+      background: var(--bg);
+      color: var(--fg);
+      font-family: "Open Sans", sans-serif;
+    }
+
+    /* Header */
+    header {
+      flex-shrink: 0;
+      background: #007acc;
+      color: #fff;
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    header h1 {
+      font-size: 1.5rem;
+      font-weight: 600;
+    }
+    .controls button {
+      background: #fff;
+      color: #007acc;
+      border: none;
+      margin-left: 0.5rem;
+      padding: 0.5rem 0.75rem;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.9rem;
+    }
+
+    /* Progress bar */
+    #progress {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 4px;
+      background: #007acc;
+      width: 0%;
+      z-index: 100;
+      transition: width 0.1s ease-out;
+    }
+
+    /* Main scrollable area */
+    main {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2rem;
+    }
+
+    /* Gradient text & typography */
+    #content {
+      max-width: 800px;
+      margin: auto;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      white-space: pre-wrap;
+      background: linear-gradient(
+        90deg,
+        #ff7e5f,
+        #feb47b,
+        #86a8e7,
+        #91eae4
+      );
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+
+    /* Collapsible chapters */
+    details.chapter {
+      margin-bottom: 1.5rem;
+      border: 1px solid #e0e0e0;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    details.chapter summary {
+      padding: 0.75rem 1rem;
+      background: rgba(0, 122, 204, 0.05);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      opacity: 0;
+      transition: opacity 0.6s ease-in;
+    }
+    details.chapter.visible summary {
+      opacity: 1;
+    }
+    details.chapter[open] summary {
+      background: rgba(0, 122, 204, 0.15);
+    }
+    details.chapter summary h2 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 600;
+      display: inline;
+      background: none;
+      -webkit-background-clip: initial;
+      color: var(--fg);
+    }
+    details.chapter summary .anchor {
+      margin-left: 0.5rem;
+      text-decoration: none;
+      color: var(--fg);
+      font-size: 0.9rem;
+    }
+    .chapter-content {
+      padding: 1rem;
+      white-space: pre-wrap;
+      font-size: var(--font-size);
+      line-height: var(--line-height);
+      background: rgba(0, 122, 204, 0.02);
+      color: var(--fg);
+    }
+
+    /* Footer */
+    footer {
+      flex-shrink: 0;
+      background: #007acc;
+      color: #fff;
+      text-align: center;
+      padding: 1rem 2rem;
+      font-size: 0.9rem;
+    }
+
+    /* Print styling */
+    @media print {
+      .controls, #progress, details summary { display: none !important; }
+      header, footer { background: none !important; color: #000 !important; }
+      body { background: #fff; color: #000; }
+      #content {
+        background: none;
+        -webkit-background-clip: initial;
+        color: #000;
+      }
+      details.chapter { border: none; }
+      details.chapter[open] .chapter-content { display: block; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Unquiet Minds</h1>
+    <div class="controls">
+      <button id="theme-toggle">🌙</button>
+      <button id="font-decrease">A–</button>
+      <button id="font-increase">A+</button>
+      <button id="lh-decrease">↕–</button>
+      <button id="lh-increase">↕+</button>
+      <button id="print-btn">🖨️ Print PDF</button>
+    </div>
+  </header>
+
+  <div id="progress"></div>
+
+  <main>
+    <div id="content"></div>
+  </main>
+
+  <footer>
+    Cool Shot Systems All right reserved 2025
+  </footer>
+
+  <script>
+    // 1. Typewriter helper
+    function typeWriter(txt, el, idx = 0) {
+      if (idx < txt.length) {
+        el.textContent += txt[idx++];
+        setTimeout(() => typeWriter(txt, el, idx), 25);
+      }
+    }
+
+    // 2. All chapter data
+    const bookData = [
+      {
+        id: "ch1",
+        title: "Chapter 1: The Modern Mindquake",
+        content: `In our hyperconnected age, distraction isn’t an occasional inconvenience—it’s the ambient noise of daily life. Every chime, buzz, and banner ad tugs at our attention, fracturing our mental focus. This relentless cascade of interruptions is what I call the modern mindquake: a seismic shift in how we think, feel, and engage with the world.
+
+1. A Day in the Life of Distraction
+
+Imagine your typical morning:
+
+You wake to the glow of your phone, instinctively checking email before even sitting up. A barrage of news headlines, work updates, and social media notifications greets you—even before your coffee kicks in. You hop in the shower but can’t resist checking headlines on your screen. During breakfast you scroll through Instagram. On the commute you answer texts, skim articles, and mentally draft tomorrow’s to-do list.
+
+By the time you arrive at your desk, your mind is already fatigued from dozens of micro-tasks. What should have been a clear slate for focused work is cluttered with half-formed thoughts and unanswered pings.
+
+2. How Distraction Hijacks the Brain
+
+Our brains evolved to seek novelty and reward—traits that once helped humans survive. Today’s digital platforms have weaponized these instincts:
+
+• Dopamine Springs: Each new “like,” message, or headline delivers a hit of dopamine.  
+• Variable Rewards: We never know which scroll will satisfy us next, so we keep swiping.  
+• Neural Rewiring: Over time, quick hits rewire us for constant stimulation, making deep work feel laborious.
+
+3. The Science of Scattered Attention
+
+1. Shrinking Attention Spans: Our average uninterrupted focus window has shrunk to around 8 seconds—less than a goldfish.  
+2. Cognitive Load Overload: Every open tab, unread email, and mental note adds to our load.  
+3. Default Mode Disruption: The brain’s “daydreaming” network needs downtime. Constant pings starve this network, dulling creativity.
+
+4. Cultural Forces Fueling the Quake
+
+• Always-On Work Culture  
+• Social Media Algorithms  
+• Productivity Porn
+
+5. The Emotional and Physical Toll
+
+• Overwhelm  
+• Chronic Stress  
+• Broken Sleep  
+• Emotional Numbness
+
+6. Recognizing Your Mindquake Triggers
+
+Keep a distraction log for two days. Note each impulsive task switch: timestamp, trigger, feeling.
+
+7. Micro-Practice Exercises
+
+1. Digital Sunrise  
+2. One-Screen Rule  
+3. Notification Blackout  
+4. Presence Pulse  
+5. Single-Task Sprint
+
+Case Study: Maria’s Creative Comeback
+
+Maria, a graphic designer, discovered 60% of her afternoon distractions were daydreams about personal errands. She instituted a daily “Errand Window” at 3 pm. Her output spiked 30% and brain fog lifted.
+
+Chapter Summary
+
+Distraction is default. Culture and tech rewire our brains for novelty. Awareness plus micro-practices restore pockets of focus.`
+      },
+      {
+        id: "ch2",
+        title: "Chapter 2: Mapping Your Mental Landscape",
+        content: `Before you can chart a course to calm, you must survey the terrain: your unique ecosystem of internal chatter and external pings.
+
+1. Internal Noise  
+• Ruminations  
+• Mental To-Do Lists  
+• Emotional Residue  
+• Creative Sidetracks
+
+2. External Noise  
+• Notifications & Alerts  
+• Visual Clutter (tabs, windows)  
+• Environmental Interruptions  
+• Multitasking Temptations
+
+Exercise: Keep a two-day log of every distraction. Timestamp, source, follow-up action.
+
+Visualization Tools  
+• Heat-Map Calendar  
+• Pie/Bar Charts  
+• Mind-Map Diagrams
+
+Prioritization Matrix  
+• Frequent + High Impact → Tackle first  
+• Frequent + Low Impact → Quick wins  
+• Infrequent + High Impact → Plan later  
+• Infrequent + Low Impact → Ignore
+
+Design Your Recovery Plan  
+• Brain-Dump Ritual  
+• App Timers & DND blocks  
+• Uninterrupted Focus Windows  
+• Batch-Checking Email
+
+Micro-Practices  
+• Morning Brain Dump  
+• Timed Focus Block  
+• Midday Reflection  
+• End-of-Day Review
+
+Case Study: Leo’s Lunch-Hour Breakthrough
+
+Leo captured personal errands in a daily “Errand Window” at 3 pm—then reclaimed the rest of his afternoon for focused writing, boosting productivity by 30%.`
+      },
+      {
+        id: "ch3",
+        title: "Chapter 3: The Science of Attention",
+        content: `Delve into the neuroscience behind focus:
+
+• Prefrontal Cortex & Executive Control  
+• Neurotransmitters: Dopamine, Norepinephrine, Acetylcholine  
+• Attention Networks: Alerting, Orienting, Executive  
+
+Key Studies & Takeaways  
+1. Deep Work vs. Shallow Work (Newport, 2016)  
+2. Flow States & Csikszentmihalyi  
+3. Rest & Default Mode Network  
+
+Action Rituals  
+• Pomodoro & Ultradian Rhythm Tuning  
+• Caffeine & Nutrition Timing  
+• Micro-Break Brain Exercises`
+      },
+      {
+        id: "ch4",
+        title: "Chapter 4: Digital Boundaries",
+        content: `Reclaim your time from screens:
+
+• Notification Diets  
+• App-Lock and Screen-Time Tools  
+• Scheduled “Tech Sabbaths”  
+• Email & Social Media Batch-Checking  
+
+Case Study: Aaron’s Email Expedition  
+Aaron turned off push notifications and batch-checked email at 10 am, 2 pm, and 4 pm. Response time improved, stress dropped, and focus soared.`
+      },
+      {
+        id: "ch5",
+        title: "Chapter 5: Rituals for Deep Work",
+        content: `Build sustainable focus practices:
+
+• Morning Anchor Routines  
+• Environment Design  
+• Time-Blocking & Theme Days  
+• Pre-Work Rituals (meditation, music cues)  
+
+Exercise: Craft your perfect 90-minute deep work block.`
+      },
+      {
+        id: "ch6",
+        title: "Chapter 6: Mindful Presence in Daily Life",
+        content: `Bring attention to every moment:
+
+• Mindful Eating & Drinking  
+• Single-Task Conversations  
+• Walking Meditations  
+• Digital Downtime Rituals  
+
+Try a “Gratitude Pause” before each transition.`
+      },
+      {
+        id: "ch7",
+        title: "Chapter 7: Creative Flow and Burnout Prevention",
+        content: `Balance immersion with recovery:
+
+• Pomodoro + Rest Cycles  
+• Play & Free-Form Expression  
+• Solitude Practices  
+• Physical Movement Breaks  
+
+Case Study: Lila’s Sketch-Sprint  
+Lila scheduled 15-minute “play sprints” between design tasks—her creativity and mood both skyrocketed.`
+      },
+      {
+        id: "ch8",
+        title: "Chapter 8: Purpose-Driven Goals",
+        content: `Align tasks with values:
+
+• Values Clarification Worksheets  
+• OKRs for Personal Projects  
+• Weekly Reflect & Course-Correct  
+
+Exercise: Write a one-sentence purpose statement.`
+      },
+      {
+        id: "ch9",
+        title: "Chapter 9: Repairing Relationships with Yourself",
+        content: `Cultivate self-compassion:
+
+• Journaling Prompts  
+• Compassion Breaks  
+• Inner Dialogue Reframing  
+
+Case Study: Sam’s Self-Kindness Habit  
+Sam replaced his morning news feed with 5 minutes of self-affirmation. Anxiety fell, focus rose.`
+      },
+      {
+        id: "ch10",
+        title: "Chapter 10: The Quiet Revolution",
+        content: `Integrate all tools into a lifelong practice:
+
+• Weekly “Mindquake Audit”  
+• Accountability Circles  
+• Continuing Education & Community  
+
+Your next step: Celebrate small wins, refine your rituals, and stay vigilant against creeping distraction.
+
+Epilogue
+
+As you close this book, know that every quiet moment is a rebellion against the mindquake. Carry these practices forward—share them, refine them, and build your own quiet revolution.`
+      }
+    ];
+
+    const contentEl = document.getElementById("content");
+
+    // 3. Render collapsible chapters with typewriter on open
+    bookData.forEach((chap, i) => {
+      const details = document.createElement("details");
+      details.className = "chapter";
+      if (i === 0) details.open = true;
+
+      const summary = document.createElement("summary");
+      const h2 = document.createElement("h2");
+      h2.id = chap.id;
+      h2.textContent = chap.title;
+      const anchor = document.createElement("a");
+      anchor.href = `#${chap.id}`;
+      anchor.className = "anchor";
+      anchor.textContent = "🔗";
+
+      summary.append(h2, anchor);
+      details.appendChild(summary);
+
+      const holder = document.createElement("div");
+      holder.className = "chapter-content";
+      holder.dataset.loaded = "false";
+      details.appendChild(holder);
+
+      details.addEventListener("toggle", () => {
+        if (details.open && holder.dataset.loaded === "false") {
+          typeWriter(chap.content, holder);
+          holder.dataset.loaded = "true";
+        }
+      });
+
+      contentEl.appendChild(details);
+    });
+
+    // Trigger typewriter for chapter 1 on load
+    const firstHolder = document.querySelector("details.chapter .chapter-content");
+    typeWriter(bookData[0].content, firstHolder);
+    firstHolder.dataset.loaded = "true";
+
+    // 4. Fade-in summaries on scroll
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(e => {
+          if (e.isIntersecting) {
+            e.target.closest("details.chapter").classList.add("visible");
+          }
+        });
+      },
+      { root: document.querySelector("main"), threshold: 0.1 }
+    );
+    document.querySelectorAll("details.chapter summary").forEach(s => {
+      observer.observe(s);
+    });
+
+    // 5. Scroll progress bar
+    window.addEventListener("scroll", () => {
+      const scrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+      const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+      const pct = (scrollTop / docHeight) * 100;
+      document.getElementById("progress").style.width = pct + "%";
+    });
+
+    // 6. Theme toggle
+    document.getElementById("theme-toggle").addEventListener("click", e => {
+      const root = document.documentElement;
+      const next = root.getAttribute("data-theme") === "dark" ? "" : "dark";
+      root.setAttribute("data-theme", next);
+      e.currentTarget.textContent = next === "dark" ? "☀️" : "🌙";
+    });
+
+    // 7. Font-size & line-height controls
+    const adjust = (varName, delta, unit = "rem") => {
+      const root = document.documentElement;
+      let curr = parseFloat(getComputedStyle(root).getPropertyValue(varName));
+      root.style.setProperty(varName, (curr + delta) + unit);
+    };
+    document.getElementById("font-increase").addEventListener("click", () => adjust("--font-size", 0.1));
+    document.getElementById("font-decrease").addEventListener("click", () => adjust("--font-size", -0.1));
+    document.getElementById("lh-increase").addEventListener("click", () => adjust("--line-height", 0.2, ""));
+    document.getElementById("lh-decrease").addEventListener("click", () => adjust("--line-height", -0.2, ""));
+
+    // 8. Print PDF button
+    document.getElementById("print-btn").addEventListener("click", () => {
+      window.print();
+    });
+  </script>
+</body>
+</html>
